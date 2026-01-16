@@ -14,6 +14,7 @@ interface AdviceCardProps {
 
 const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFavorite, isDarkMode, onToggleFavorite }) => {
   const [copied, setCopied] = useState(false);
+  const [shared, setShared] = useState(false);
   const [backstory, setBackstory] = useState<string | null>(null);
   const [isExplaining, setIsExplaining] = useState(false);
   const [showBackstory, setShowBackstory] = useState(false);
@@ -31,16 +32,23 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
   const handleExplain = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!advice || isExplaining) return;
+    
+    // Toggle if we already have a valid backstory
     if (backstory && !backstoryError) {
       setShowBackstory(!showBackstory);
       return;
     }
+
     setIsExplaining(true);
     setBackstoryError(false);
     try {
       const explanation = await getAdviceBackstory(advice.text, advice.mood);
-      setBackstory(explanation);
-      setShowBackstory(true);
+      if (explanation) {
+        setBackstory(explanation);
+        setShowBackstory(true);
+      } else {
+        throw new Error("EMPTY_DATA");
+      }
     } catch (err) {
       setBackstory("COMM_FAILURE // UNABLE_TO_RETRIEVE_CONTEXT");
       setBackstoryError(true);
@@ -56,6 +64,24 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
     navigator.clipboard.writeText(advice.text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!advice) return;
+    const shareText = `"${advice.text}" - Zen_X_Zany Advice Engine`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Zen_X_Zany Wisdom', text: shareText, url: window.location.href });
+        setShared(true); setTimeout(() => setShared(false), 2000);
+      } catch (err) { if (err instanceof Error && err.name !== 'AbortError') fallbackCopy(shareText); }
+    } else { fallbackCopy(shareText); }
+  };
+
+  const fallbackCopy = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setShared(true); setTimeout(() => setShared(false), 2000);
     });
   };
 
@@ -111,14 +137,20 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
              </button>
              <div className="flex gap-2">
-               <button onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(); }} className={`flex-1 border-[4px] ${cardBorder} p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-center transition-all ${isFavorite ? 'bg-[#FF4D00] text-black' : isDarkMode ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`}>
+               <button onClick={(e) => { e.stopPropagation(); onToggleFavorite?.(); }} className={`flex-1 border-[4px] ${cardBorder} p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-center transition-all ${isFavorite ? 'bg-[#FF4D00] text-black border-[#FF4D00]' : isDarkMode ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`}>
                  <svg width="18" height="18" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="3"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                </button>
-               <button onClick={handleCopy} className={`flex-1 border-[4px] ${cardBorder} p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-center transition-all ${isDarkMode ? 'bg-zinc-800 text-white' : 'bg-white text-black'}`}>
+               <button onClick={handleCopy} className={`flex-1 border-[4px] ${cardBorder} p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-center transition-all ${isDarkMode ? 'bg-zinc-800 text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
                  {copied ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="4"><polyline points="20 6 9 17 4 12"/></svg> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>}
+               </button>
+               <button onClick={handleShare} className={`flex-1 border-[4px] ${cardBorder} p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-center transition-all ${isDarkMode ? 'bg-zinc-800 text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
+                  {shared ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="4"><polyline points="20 6 9 17 4 12"/></svg> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>}
                </button>
              </div>
           </div>
+        </div>
+        <div className="absolute bottom-3 left-0 w-full flex justify-center pointer-events-none">
+          <span className="font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-gray-500/60">Tap card for new wisdom</span>
         </div>
       </div>
     </div>

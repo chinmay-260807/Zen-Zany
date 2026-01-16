@@ -13,25 +13,19 @@ export const generateAdvice = async (): Promise<Advice> => {
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `Give me a single piece of ${randomMood.toLowerCase()} advice. 
-               Keep it between 5 and 20 words. 
-               If it is 'ABSURD', make it surreal. 
-               If it is 'INSPIRATIONAL', make it profound but brief. 
-               Return strictly JSON format.`,
+    contents: `Task: Generate a single piece of ${randomMood.toLowerCase()} advice.
+Rules:
+1. Length: 5-20 words.
+2. If mood is ABSURD, make it surreal/funny.
+3. If mood is INSPIRATIONAL, make it profound.
+4. Return ONLY JSON.`,
     config: {
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
         properties: {
-          text: {
-            type: Type.STRING,
-            description: 'The advice message.',
-          },
-          mood: {
-            type: Type.STRING,
-            enum: Object.values(AdviceMood),
-            description: 'The mood of the advice.',
-          }
+          text: { type: Type.STRING },
+          mood: { type: Type.STRING, enum: Object.values(AdviceMood) }
         },
         required: ["text", "mood"]
       },
@@ -44,11 +38,11 @@ export const generateAdvice = async (): Promise<Advice> => {
     const data = JSON.parse(cleanJson);
     return {
       ...data,
-      id: Math.random().toString(16).slice(2, 8).toUpperCase()
+      id: Math.random().toString(36).substring(2, 8).toUpperCase()
     } as Advice;
   } catch (err) {
-    console.error("Failed to parse AI response:", err);
-    throw new Error("PARSING_ERROR");
+    console.error("Gemini Parse Error:", err);
+    throw new Error("DATA_CORRUPTION");
   }
 };
 
@@ -57,13 +51,16 @@ export const getAdviceBackstory = async (adviceText: string, mood: AdviceMood): 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Provide a brief, creative backstory or "why" for this advice: "${adviceText}". 
-                 Match the tone: ${mood}. Keep it under 30 words.`,
+      contents: `Context: Someone just received this advice: "${adviceText}". 
+Mood: ${mood}.
+Task: Write a 1-sentence backstory (under 20 words) explaining why this advice exists or what triggered it.`,
     });
 
-    return response.text?.trim() || "The universe is currently keeping its secrets.";
+    const text = response.text?.trim();
+    if (!text) throw new Error("Empty response");
+    return text;
   } catch (err) {
-    console.error("Backstory error:", err);
+    console.error("Backstory API Error:", err);
     throw err;
   }
 };
