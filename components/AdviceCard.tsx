@@ -86,7 +86,7 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
       setBackstory(explanation);
       setShowBackstory(true);
     } catch (err) {
-      setBackstory("UNABLE_TO_RETRIEVE_CONTEXT");
+      setBackstory("UNABLE_TO_RETRIEVE_CONTEXT // ENGINE_ERROR");
       setBackstoryError(true);
       setShowBackstory(true);
     } finally { setIsExplaining(false); }
@@ -111,8 +111,8 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
             <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tighter uppercase transition-all duration-700 ${showBackstory ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100'} ${cardText}`}>
               {advice?.text}
             </h2>
-            <div className={`absolute inset-0 flex flex-col justify-center transition-all duration-700 ${showBackstory ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'}`}>
-              <div className={`relative ${backstoryBg} border-[3px] md:border-[4px] ${cardBorder} p-5 sm:p-10 ${isDarkMode ? 'slab-shadow-white' : 'slab-shadow-sm'}`}>
+            <div className={`absolute inset-0 flex flex-col justify-center transition-all duration-700 ${showBackstory ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95 pointer-events-none'}`}>
+              <div className={`relative ${backstoryBg} border-[3px] md:border-[4px] ${cardBorder} p-5 sm:p-10 ${isDarkMode ? 'shadow-[4px_4px_0px_0px_#fff]' : 'shadow-[4px_4px_0px_0px_#000]'}`}>
                 <div className={`absolute -bottom-4 left-12 w-6 h-6 ${backstoryBg} border-r-[3px] border-b-[3px] ${cardBorder} transform rotate-45 -z-10`} />
                 <span className="font-mono text-[10px] font-bold uppercase mb-4 text-[#FF4D00] block tracking-widest">Contextual_Analysis</span>
                 <p className={`text-lg md:text-2xl font-bold font-mono lowercase ${backstoryError ? 'text-red-500' : cardText}`}>{backstory}</p>
@@ -141,7 +141,7 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
                <IconWrapper><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></IconWrapper>
              </button>
              <div className="flex gap-2">
-               <button onClick={handleToggleFavorite} className={`flex-1 border-[3px] md:border-[4px] ${cardBorder} p-3 md:p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-center transition-all ${isFavorite ? 'bg-[#FF4D00] text-black border-orange-600' : isDarkMode ? 'bg-zinc-800 text-white hover:bg-[#FF4D00] hover:text-white' : 'bg-white text-black hover:bg-gray-100'}`}>
+               <button onClick={handleToggleFavorite} className={`flex-1 border-[3px] md:border-[4px] ${cardBorder} p-3 md:p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-center transition-all ${isFavorite ? 'bg-[#FF4D00] text-black border-[#FF4D00]' : isDarkMode ? 'bg-zinc-800 text-white hover:bg-[#FF4D00] hover:text-white' : 'bg-white text-black hover:bg-gray-100'}`}>
                  <IconWrapper><svg width="18" height="18" viewBox="0 0 24 24" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" strokeWidth="3"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></IconWrapper>
                </button>
                <button onClick={handleCopy} className={`flex-1 border-[3px] md:border-[4px] ${cardBorder} p-3 md:p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-center transition-all ${isDarkMode ? 'bg-zinc-800 text-white hover:bg-white hover:text-black' : 'bg-white text-black hover:bg-black hover:text-white'}`}>
@@ -157,11 +157,6 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
           <span className="font-mono text-[8px] font-bold uppercase tracking-[0.2em] text-gray-500/60">Tap card for new wisdom</span>
         </div>
       </div>
-      <style>{`
-        .slab-shadow-sm { box-shadow: 4px 4px 0px 0px #000; }
-        .slab-shadow-white { box-shadow: 8px 8px 0px 0px #fff; }
-        @media (min-width: 768px) { .slab-shadow-sm { box-shadow: 6px 6px 0px 0px #000; } }
-      `}</style>
     </div>
   );
 };
