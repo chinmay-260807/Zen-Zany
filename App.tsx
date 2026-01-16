@@ -65,57 +65,61 @@ const App: React.FC = () => {
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 150);
 
-    const historyTexts = state.history.map(h => h.text);
+    // Track both history and favorites for exclusion
+    const historyTexts = state.history.map(h => h.text.trim().toLowerCase());
+    const favoriteTexts = favorites.map(f => f.text.trim().toLowerCase());
+    const allSeen = [...historyTexts, ...favoriteTexts];
 
     try {
-      let newAdvice = await generateAdvice(historyTexts);
-      
-      // Simple client-side check to prevent immediate re-generation of the exact same advice
-      // if the AI somehow ignores the instructions.
       let attempts = 0;
-      while (historyTexts.includes(newAdvice.text) && attempts < 2) {
-        newAdvice = await generateAdvice(historyTexts);
+      let newAdvice: Advice | null = null;
+
+      // Recursive check: If AI serves a duplicate, retry up to 3 times
+      while (attempts < 3) {
+        newAdvice = await generateAdvice(state.history.map(h => h.text));
+        const normalizedText = newAdvice.text.trim().toLowerCase();
+        
+        if (!allSeen.includes(normalizedText)) {
+          break;
+        }
         attempts++;
       }
 
-      setState(prev => {
-        // Double check for uniqueness before adding to history
-        if (prev.history.some(h => h.text === newAdvice.text)) {
-           return { ...prev, current: newAdvice, loading: false };
-        }
+      if (!newAdvice) throw new Error("GEN_FAILURE");
 
-        const uniqueHistory = [newAdvice, ...prev.history].slice(0, 20);
+      setState(prev => {
+        const uniqueHistory = [newAdvice!, ...prev.history]
+          .filter((v, i, a) => a.findIndex(t => t.text.trim().toLowerCase() === v.text.trim().toLowerCase()) === i)
+          .slice(0, 30);
         
         return {
           ...prev,
-          current: newAdvice,
+          current: newAdvice!,
           history: uniqueHistory,
           loading: false,
         };
       });
     } catch (err) {
-      console.error("API Error, using fallback:", err);
-      // Select a random fallback that isn't the current one
-      const others = FALLBACK_ADVICE.filter(f => f.text !== state.current?.text);
-      const randomFallback = others[Math.floor(Math.random() * others.length)] || FALLBACK_ADVICE[0];
-      const fallbackWithId = { ...randomFallback, id: 'FB-' + Date.now().toString(16).substring(8) };
+      console.error("API Error, using high-entropy fallback:", err);
+      const others = FALLBACK_ADVICE.filter(f => !allSeen.includes(f.text.trim().toLowerCase()));
+      const fallback = others.length > 0 ? others[Math.floor(Math.random() * others.length)] : FALLBACK_ADVICE[0];
+      const fallbackWithId = { ...fallback, id: 'FB-' + Date.now().toString(16).substring(8) };
       
       setState(prev => {
-        const combined = [fallbackWithId, ...prev.history];
-        const uniqueHistory = combined.filter((v, i, a) => 
-          a.findIndex(t => t.text === v.text) === i
-        ).slice(0, 20);
+        const uniqueHistory = [fallbackWithId, ...prev.history]
+          .filter((v, i, a) => a.findIndex(t => t.text === v.text) === i)
+          .slice(0, 30);
 
         return {
           ...prev,
           current: fallbackWithId,
           history: uniqueHistory,
           loading: false,
-          error: "COMM_SYNC_ISSUE // OFFLINE_CACHE_ACTIVE"
+          error: "COMM_SYNC_ISSUE // LOCAL_BUFFER_ACTIVE"
         };
       });
     }
-  }, [state.loading, state.history, state.current]);
+  }, [state.loading, state.history, favorites]);
 
   const handleThemeToggle = useCallback(() => {
     setIsDarkMode(prev => !prev);
@@ -140,7 +144,7 @@ const App: React.FC = () => {
       <nav className={`w-full border-b-[4px] p-4 md:p-6 flex justify-between items-center sticky top-0 z-50 transition-colors ${isDarkMode ? 'bg-[#1a1a1a] border-white' : 'bg-white border-black'}`}>
         <div className="flex items-center gap-4">
           <div className={`w-8 h-8 flex items-center justify-center font-mono font-bold ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>Z</div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tighter uppercase">Zen_X_Zany // v3.04</h1>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tighter uppercase">Zen_X_Zany // v3.05</h1>
         </div>
         <button onClick={handleThemeToggle} className={`flex items-center gap-2 px-3 py-1 border-[2px] font-mono text-[10px] font-bold uppercase transition-all ${isDarkMode ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'}`}>
           <span className={`w-2 h-2 rounded-full ${isDarkMode ? 'bg-yellow-400' : 'bg-indigo-600'}`} />
@@ -201,10 +205,10 @@ const App: React.FC = () => {
       </main>
 
       <footer className={`w-full border-t-[4px] p-4 font-mono text-[10px] font-bold uppercase flex justify-between items-center ${isDarkMode ? 'bg-zinc-900 text-white border-white' : 'bg-[#FF4D00] text-black border-black'}`}>
-        <span>© VOID_AESTHETICS // ARCHIVE_2025</span>
+        <span>© VOID_AESTHETICS // UNIQUE_ID_ACTIVE</span>
         <div className="flex gap-4">
           {state.error && <span className="animate-pulse text-red-500">ERR: {state.error}</span>}
-          <span>SECURE: {isDarkMode ? 'QUANTUM' : 'ACTIVE'}</span>
+          <span>ENTROPY: {isDarkMode ? 'MAX' : 'HIGH'}</span>
         </div>
       </footer>
     </div>

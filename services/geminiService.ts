@@ -10,18 +10,23 @@ export const generateAdvice = async (historyTexts: string[] = []): Promise<Advic
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const moods = Object.values(AdviceMood);
   const randomMood = moods[Math.floor(Math.random() * moods.length)];
+  
+  // Dynamic entropy string to prevent the model from getting stuck in patterns
+  const entropy = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
     contents: `Task: Generate a single, unique piece of ${randomMood.toLowerCase()} advice.
 Rules:
 1. Length: 5-20 words.
-2. If mood is ABSURD, make it surreal/funny.
-3. If mood is INSPIRATIONAL, make it profound.
-4. VARIETY IS KEY: Avoid common clichés. Do NOT repeat yourself.
-5. PREVIOUS ADVICE TO AVOID: ${historyTexts.slice(0, 5).join(' | ')}.
+2. Mood context: ${randomMood}.
+3. ENTROPY_KEY: ${entropy} (Use this to ensure high variance).
+4. FORBIDDEN_LIST: ${historyTexts.slice(0, 15).join(' | ')}.
+5. IMPORTANT: Do not use common idioms. Be weird, specific, and totally new.
 6. Return ONLY JSON.`,
     config: {
+      temperature: 1.0,
+      topP: 0.95,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -38,6 +43,7 @@ Rules:
     const rawText = response.text || "";
     const cleanJson = extractJSON(rawText.trim());
     const data = JSON.parse(cleanJson);
+    
     return {
       ...data,
       id: Math.random().toString(36).substring(2, 8).toUpperCase()
