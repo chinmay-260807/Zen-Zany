@@ -20,7 +20,6 @@ const App: React.FC = () => {
   
   const purgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load preferences from localStorage on mount
   useEffect(() => {
     const storedFavs = localStorage.getItem('zen_zany_favorites');
     if (storedFavs) {
@@ -35,14 +34,16 @@ const App: React.FC = () => {
     if (storedTheme === 'dark') {
       setIsDarkMode(true);
     }
+
+    // Pick random initial advice at runtime
+    const initial = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
+    setState(prev => ({ ...prev, current: initial }));
   }, []);
 
-  // Sync favorites to localStorage
   useEffect(() => {
     localStorage.setItem('zen_zany_favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // Sync theme to localStorage
   useEffect(() => {
     localStorage.setItem('zen_zany_theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
@@ -106,11 +107,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const initial = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
-    setState(prev => ({ ...prev, current: initial }));
-  }, []);
-
   const isCurrentFavorite = state.current ? favorites.some(f => f.text === state.current?.text) : false;
 
   const themeClasses = isDarkMode 
@@ -124,7 +120,6 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col transition-all duration-700 ease-in-out ${themeClasses} ${isFlashing ? 'invert duration-75' : ''}`}>
       
-      {/* Brutalist Header Bar */}
       <nav className={`w-full border-b-[4px] p-4 md:p-6 flex justify-between items-center sticky top-0 z-50 transition-colors duration-700 ${subThemeClasses}`}>
         <div className="flex items-center gap-4">
           <div className={`w-8 h-8 flex items-center justify-center font-mono font-bold transition-colors duration-700 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>Z</div>
@@ -164,8 +159,6 @@ const App: React.FC = () => {
       </nav>
 
       <main className="flex-1 flex flex-col md:flex-row relative">
-        
-        {/* Left Side: Advice Display */}
         <div className={`flex-[3] p-6 md:p-12 lg:p-20 flex flex-col justify-center border-b-[4px] md:border-b-0 md:border-r-[4px] transition-colors duration-700 ${isDarkMode ? 'border-white' : 'border-black'}`}>
           <AdviceCard 
             advice={state.current} 
@@ -191,7 +184,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Log / History / Favorites */}
         <aside className={`flex-1 p-8 md:p-12 flex flex-col gap-10 overflow-y-auto max-h-[calc(100vh-140px)] transition-colors duration-700 ${subThemeClasses}`}>
           <div>
             <div className={`flex justify-between items-center mb-6 border-b pb-2 ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
@@ -209,11 +201,11 @@ const App: React.FC = () => {
               {state.history.length === 0 && <span className="font-mono text-[10px] text-gray-400 italic opacity-50">LOGS_WIPED_CLEAN</span>}
               {state.history.map((h, i) => (
                 <div 
-                  key={i} 
+                  key={h.id || i} 
                   className={`font-mono text-[10px] border-l-2 pl-4 py-1 transition-colors cursor-pointer ${isDarkMode ? 'border-white text-white hover:bg-gray-800' : 'border-black text-black hover:bg-gray-50'}`} 
                   onClick={() => setState(prev => ({ ...prev, current: h }))}
                 >
-                  <span className={isDarkMode ? 'text-gray-500' : 'text-gray-400'}>[INSIGHT_{state.history.length - i}]</span> {h.text.substring(0, 40)}...
+                  <span className={isDarkMode ? 'text-gray-500' : 'text-gray-400'}>[INSIGHT_{h.id}]</span> {h.text.substring(0, 40)}...
                 </div>
               ))}
             </div>
@@ -241,7 +233,7 @@ const App: React.FC = () => {
               {favorites.length === 0 && <span className="font-mono text-[10px] text-gray-400 italic opacity-50">NO_DATA_PERSISTED</span>}
               {favorites.map((f, i) => (
                 <div 
-                  key={i} 
+                  key={f.id || i} 
                   className={`font-mono text-[10px] border-l-2 pl-4 py-1 transition-colors group flex justify-between items-center cursor-pointer ${isDarkMode ? 'border-[#FF4D00] text-white hover:bg-orange-950/20' : 'border-[#FF4D00] text-black hover:bg-orange-50'}`} 
                   onClick={() => setState(prev => ({ ...prev, current: f }))}
                 >
@@ -269,7 +261,6 @@ const App: React.FC = () => {
         </aside>
       </main>
 
-      {/* Global Bottom Bar */}
       <footer className={`w-full border-t-[4px] p-4 font-mono text-[10px] font-bold uppercase flex justify-between items-center transition-colors duration-700 ${isDarkMode ? 'bg-zinc-900 text-white border-white' : 'bg-[#FF4D00] text-black border-black'}`}>
         <span>© VOID_AESTHETICS // ARCHIVE_2025</span>
         <div className="flex gap-4">
@@ -279,20 +270,10 @@ const App: React.FC = () => {
       </footer>
 
       <style>{`
-        .shadow-white-slab {
-          box-shadow: 8px 8px 0px 0px #fff;
-        }
-        .shadow-white-slab:active {
-          box-shadow: 0px 0px 0px 0px #fff;
-          transform: translate(8px, 8px);
-        }
-        @keyframes slide-in-bottom {
-          from { transform: translateY(100%); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-in {
-          animation: slide-in-bottom 0.2s ease-out;
-        }
+        .shadow-white-slab { box-shadow: 8px 8px 0px 0px #fff; }
+        .shadow-white-slab:active { box-shadow: 0px 0px 0px 0px #fff; transform: translate(8px, 8px); }
+        @keyframes slide-in-bottom { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .animate-in { animation: slide-in-bottom 0.2s ease-out; }
       `}</style>
     </div>
   );

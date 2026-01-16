@@ -7,6 +7,7 @@ export enum AdviceMood {
 }
 
 export interface Advice {
+  id: string;
   text: string;
   mood: AdviceMood;
 }

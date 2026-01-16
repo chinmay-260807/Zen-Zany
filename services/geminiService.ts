@@ -2,8 +2,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Advice, AdviceMood } from "../types";
 
+const generateId = () => Math.random().toString(16).slice(2, 8).toUpperCase();
+
 export const generateAdvice = async (): Promise<Advice> => {
-  // Always initialize GoogleGenAI exactly as per instructions
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const moods = Object.values(AdviceMood);
   const randomMood = moods[Math.floor(Math.random() * moods.length)];
@@ -36,7 +37,10 @@ export const generateAdvice = async (): Promise<Advice> => {
 
   try {
     const data = JSON.parse(response.text.trim());
-    return data as Advice;
+    return {
+      ...data,
+      id: generateId()
+    } as Advice;
   } catch (err) {
     console.error("Failed to parse AI response, falling back.", err);
     throw err;
@@ -44,7 +48,6 @@ export const generateAdvice = async (): Promise<Advice> => {
 };
 
 export const getAdviceBackstory = async (adviceText: string, mood: AdviceMood): Promise<string> => {
-  // Always initialize GoogleGenAI exactly as per instructions
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',

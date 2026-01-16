@@ -137,16 +137,13 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
         ${loading ? 'opacity-50 pointer-events-none' : 'opacity-100'}
       `}
     >
-      {/* The Slab */}
       <div className={`
         bg-white border-[4px] md:border-[6px] border-black p-5 sm:p-8 md:p-12 pb-14 sm:pb-16 md:pb-20 slab-shadow relative overflow-hidden flex flex-col md:flex-row gap-8 md:gap-12
         transition-transform duration-300 ${loading ? 'translate-x-2 translate-y-2' : 'group-hover/card:-translate-x-1 group-hover/card:-translate-y-1'}
       `}>
         
-        {/* Mood Indicator Stripe */}
         <div className={`absolute top-0 left-0 w-full h-[8px] md:h-[12px] ${colors.primary}`} />
 
-        {/* 1. Primary Text Side */}
         <div className="flex-[2] relative min-h-[250px] sm:min-h-[300px] md:min-h-[350px] flex flex-col justify-center">
           <div className="font-mono text-[10px] md:text-[12px] font-bold mb-6 md:mb-8 uppercase tracking-widest flex items-center gap-2">
              <div className="w-2 md:w-3 h-2 md:h-3 bg-black animate-ping" />
@@ -162,7 +159,6 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
               {advice?.text}
             </h2>
 
-            {/* Backstory Pane (Thought Bubble Style) */}
             <div className={`
               absolute inset-0 flex flex-col justify-center transition-all duration-700 delay-100 ease-[cubic-bezier(0.16,1,0.3,1)]
               ${showBackstory ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95 pointer-events-none'}
@@ -200,7 +196,6 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
           </div>
         </div>
 
-        {/* 2. Metadata / Controls Side */}
         <div className="flex-1 flex flex-col justify-between border-t-[3px] md:border-t-0 md:border-l-[3px] border-black pt-6 md:pt-0 md:pl-10 lg:pl-12">
           
           <div className="flex flex-row md:flex-col justify-between md:justify-start gap-4 md:gap-6">
@@ -211,11 +206,10 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
             
             <div className="flex flex-col items-end md:items-start">
               <span className="font-mono text-[9px] md:text-[10px] uppercase font-bold text-gray-400">ID_Hex</span>
-              <span className="font-mono text-[10px] md:text-xs">#{Math.random().toString(16).slice(2, 8).toUpperCase()}</span>
+              <span className="font-mono text-[10px] md:text-xs">#{advice?.id || 'PENDING'}</span>
             </div>
           </div>
 
-          {/* Action Grid */}
           <div className="grid grid-cols-1 gap-3 mt-6 md:mt-8">
              <button 
                onClick={handleExplain}
@@ -229,7 +223,6 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
              </button>
 
              <div className="flex gap-2 sm:gap-3">
-               {/* Favorite Column */}
                <div className="relative flex-1">
                  <div className={`absolute -top-10 left-1/2 -translate-x-1/2 font-mono text-[9px] md:text-[10px] font-bold text-[#FF4D00] transition-all duration-700 pointer-events-none ${justFavorited ? 'opacity-100 -translate-y-4 scale-125' : 'opacity-0 translate-y-0 scale-100'}`}>
                    SAVED!
@@ -248,7 +241,6 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
                  </button>
                </div>
 
-               {/* Copy Column */}
                <button 
                  onClick={handleCopy}
                  className="group flex-1 bg-white border-[3px] md:border-[4px] border-black p-3 md:p-4 font-mono text-[9px] md:text-[10px] font-bold uppercase flex items-center justify-center hover:bg-black hover:text-white transition-all"
@@ -263,7 +255,6 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
                  </IconWrapper>
                </button>
 
-               {/* Share Column */}
                <div className="relative flex-1">
                  <div className={`absolute -top-10 left-1/2 -translate-x-1/2 font-mono text-[9px] md:text-[10px] font-bold text-blue-600 transition-all duration-700 pointer-events-none ${shared ? 'opacity-100 -translate-y-4 scale-125' : 'opacity-0 translate-y-0 scale-100'}`}>
                    TRANSMITTED!
@@ -288,7 +279,6 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
           </div>
         </div>
 
-        {/* Action Prompt - Centered at the bottom */}
         <div className="absolute bottom-3 left-0 w-full flex justify-center px-4 pointer-events-none">
           <span className="font-mono text-[8px] md:text-[9px] font-bold uppercase tracking-[0.2em] text-gray-400/60 flex items-center gap-2">
             <span className="w-1 h-1 bg-gray-300 rounded-full animate-pulse" />
@@ -298,23 +288,12 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
         </div>
       </div>
       
-      {/* Decorative Blueprint Markers */}
       <div className="absolute -top-4 -left-4 font-mono text-[9px] md:text-[10px] text-gray-300 select-none">UL_COORD_001</div>
       <div className="absolute -bottom-4 -right-4 font-mono text-[9px] md:text-[10px] text-gray-300 select-none">LR_COORD_999</div>
 
       <style>{`
-        .slab-shadow-sm {
-          box-shadow: 4px 4px 0px 0px #000;
-        }
-        @media (min-width: 768px) {
-          .slab-shadow-sm {
-            box-shadow: 6px 6px 0px 0px #000;
-          }
-        }
-        @keyframes icon-bounce {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(0.85); }
-        }
+        .slab-shadow-sm { box-shadow: 4px 4px 0px 0px #000; }
+        @media (min-width: 768px) { .slab-shadow-sm { box-shadow: 6px 6px 0px 0px #000; } }
         @keyframes heartbeat-sparkle {
           0% { transform: scale(1); filter: drop-shadow(0 0 0px #FF4D00); }
           20% { transform: scale(1.6); filter: drop-shadow(0 0 12px #FF4D00); }
@@ -335,21 +314,10 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
           from { opacity: 0; transform: scale(0.98); }
           to { opacity: 1; transform: scale(1); }
         }
-        .animate-radiate-ring-orange {
-          animation: radiate-ring-orange 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-        .animate-radiate-ring-blue {
-          animation: radiate-ring-blue 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-        .animate-heartbeat-sparkle {
-          animation: heartbeat-sparkle 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .animate-content-appear {
-          animation: content-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        .group:active svg {
-          animation: icon-bounce 0.2s ease-in-out;
-        }
+        .animate-radiate-ring-orange { animation: radiate-ring-orange 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+        .animate-radiate-ring-blue { animation: radiate-ring-blue 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
+        .animate-heartbeat-sparkle { animation: heartbeat-sparkle 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .animate-content-appear { animation: content-appear 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
       `}</style>
     </div>
   );
