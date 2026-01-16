@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Advice, AdviceMood, AdviceState } from './types';
 import { FALLBACK_ADVICE } from './constants';
@@ -6,7 +5,6 @@ import { generateAdvice } from './services/geminiService';
 import AdviceCard from './components/AdviceCard';
 
 const App: React.FC = () => {
-  // Use state initializer function to avoid null initial render and module-level random logic
   const [state, setState] = useState<AdviceState>(() => {
     const initial = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
     return {
@@ -30,14 +28,23 @@ const App: React.FC = () => {
     if (storedFavs) {
       try {
         setFavorites(JSON.parse(storedFavs));
-      } catch (e) {
-        console.error("Failed to parse favorites", e);
-      }
+      } catch (e) { console.error("Failed to parse favorites", e); }
+    }
+
+    const storedHistory = localStorage.getItem('zen_zany_history');
+    if (storedHistory) {
+      try {
+        const history = JSON.parse(storedHistory);
+        setState(prev => ({ ...prev, history }));
+      } catch (e) { console.error("Failed to parse history", e); }
     }
 
     const storedTheme = localStorage.getItem('zen_zany_theme');
     if (storedTheme === 'dark') {
       setIsDarkMode(true);
+      document.body.style.backgroundColor = '#121212';
+    } else {
+      document.body.style.backgroundColor = '#f0f0f0';
     }
   }, []);
 
@@ -46,14 +53,19 @@ const App: React.FC = () => {
   }, [favorites]);
 
   useEffect(() => {
+    localStorage.setItem('zen_zany_history', JSON.stringify(state.history));
+  }, [state.history]);
+
+  useEffect(() => {
     localStorage.setItem('zen_zany_theme', isDarkMode ? 'dark' : 'light');
+    document.body.style.backgroundColor = isDarkMode ? '#121212' : '#f0f0f0';
   }, [isDarkMode]);
 
   const toggleFavorite = useCallback((advice: Advice) => {
     setFavorites(prev => {
-      const exists = prev.find(f => f.text === advice.text);
+      const exists = prev.find(f => f.id === advice.id);
       if (exists) {
-        return prev.filter(f => f.text !== advice.text);
+        return prev.filter(f => f.id !== advice.id);
       }
       return [advice, ...prev];
     });
@@ -94,7 +106,7 @@ const App: React.FC = () => {
       setState(prev => ({
         ...prev,
         current: newAdvice,
-        history: [newAdvice, ...prev.history].slice(0, 5),
+        history: [newAdvice, ...prev.history].slice(0, 10),
         loading: false,
       }));
     } catch (err) {
@@ -108,7 +120,7 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const isCurrentFavorite = state.current ? favorites.some(f => f.text === state.current?.text) : false;
+  const isCurrentFavorite = state.current ? favorites.some(f => f.id === state.current?.id) : false;
 
   const themeClasses = isDarkMode 
     ? 'bg-[#121212] text-white border-white' 
@@ -120,24 +132,15 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen flex flex-col transition-all duration-700 ease-in-out ${themeClasses} ${isFlashing ? 'invert duration-75' : ''}`}>
-      
       <nav className={`w-full border-b-[4px] p-4 md:p-6 flex justify-between items-center sticky top-0 z-50 transition-colors duration-700 ${subThemeClasses}`}>
         <div className="flex items-center gap-4">
           <div className={`w-8 h-8 flex items-center justify-center font-mono font-bold transition-colors duration-700 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>Z</div>
           <h1 className="text-xl md:text-2xl font-bold tracking-tighter uppercase">Zen_X_Zany // v3.02</h1>
         </div>
-        
         <div className="flex items-center gap-4 md:gap-8">
           <button 
             onClick={handleThemeToggle}
-            className={`
-              relative flex items-center gap-2 px-3 py-1 border-[2px] font-mono text-[10px] font-bold uppercase overflow-hidden
-              transition-all duration-300 active:scale-95
-              ${themeConfirmation 
-                ? 'bg-green-500 border-green-600 text-white' 
-                : isDarkMode ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'
-              }
-            `}
+            className={`relative flex items-center gap-2 px-3 py-1 border-[2px] font-mono text-[10px] font-bold uppercase overflow-hidden transition-all duration-300 active:scale-95 ${themeConfirmation ? 'bg-green-500 border-green-600 text-white' : isDarkMode ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'}`}
           >
             {themeConfirmation ? (
               <span className="flex items-center gap-1 animate-in slide-in-from-bottom-2 duration-300">
@@ -151,11 +154,6 @@ const App: React.FC = () => {
               </>
             )}
           </button>
-          
-          <div className={`hidden lg:flex gap-8 font-mono text-[10px] uppercase font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-            <span>System: {isDarkMode ? 'Void_Protocol' : 'Solar_Link'}</span>
-            <span>{new Date().toLocaleTimeString()}</span>
-          </div>
         </div>
       </nav>
 
@@ -166,19 +164,18 @@ const App: React.FC = () => {
             loading={state.loading} 
             onClick={getNewAdvice} 
             isFavorite={isCurrentFavorite}
+            isDarkMode={isDarkMode}
             onToggleFavorite={() => state.current && toggleFavorite(state.current)}
           />
-          
           <div className="mt-12 flex flex-wrap gap-4">
             <button
               onClick={getNewAdvice}
               disabled={state.loading}
-              className={`group px-8 py-4 font-bold uppercase tracking-widest slab-shadow active-press transition-all flex items-center gap-4 disabled:opacity-50 ${isDarkMode ? 'bg-white text-black shadow-white-slab' : 'bg-black text-white'}`}
+              className={`group px-8 py-4 font-bold uppercase tracking-widest active-press transition-all flex items-center gap-4 disabled:opacity-50 ${isDarkMode ? 'bg-white text-black slab-shadow-white' : 'bg-black text-white slab-shadow'}`}
             >
               {state.loading ? 'LOADING...' : 'GENERATE_WISDOM'}
               <span className={`w-4 h-4 block rounded-full group-hover:scale-125 transition-transform ${isDarkMode ? 'bg-black' : 'bg-white'}`} />
             </button>
-            
             <div className={`border-[4px] px-6 py-4 font-mono text-[12px] flex items-center transition-colors duration-700 ${subThemeClasses}`}>
               STATUS: {state.loading ? 'RECALIBRATING' : 'READY_FOR_INPUT'}
             </div>
@@ -187,77 +184,40 @@ const App: React.FC = () => {
 
         <aside className={`flex-1 p-8 md:p-12 flex flex-col gap-10 overflow-y-auto max-h-[calc(100vh-140px)] transition-colors duration-700 ${subThemeClasses}`}>
           <div>
-            <div className={`flex justify-between items-center mb-6 border-b pb-2 ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
-              <h3 className={`font-mono text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Recent_Output_Log</h3>
+            <div className={`flex justify-between items-center mb-6 border-b pb-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h3 className={`font-mono text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Recent_Output_Log</h3>
               {state.history.length > 0 && (
-                <button 
-                  onClick={clearHistory}
-                  className={`font-mono text-[9px] font-bold border px-2 py-0.5 transition-colors ${isDarkMode ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'}`}
-                >
-                  WIPE_HISTORY
-                </button>
+                <button onClick={clearHistory} className={`font-mono text-[9px] font-bold border px-2 py-0.5 transition-colors ${isDarkMode ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'}`}>WIPE_HISTORY</button>
               )}
             </div>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {state.history.length === 0 && <span className="font-mono text-[10px] text-gray-400 italic opacity-50">LOGS_WIPED_CLEAN</span>}
               {state.history.map((h, i) => (
-                <div 
-                  key={h.id || i} 
-                  className={`font-mono text-[10px] border-l-2 pl-4 py-1 transition-colors cursor-pointer ${isDarkMode ? 'border-white text-white hover:bg-gray-800' : 'border-black text-black hover:bg-gray-50'}`} 
-                  onClick={() => setState(prev => ({ ...prev, current: h }))}
-                >
-                  <span className={isDarkMode ? 'text-gray-500' : 'text-gray-400'}>[INSIGHT_{h.id}]</span> {h.text.substring(0, 40)}...
+                <div key={h.id || i} className={`font-mono text-[10px] border-l-2 pl-4 py-2 transition-all cursor-pointer ${isDarkMode ? 'border-white text-white hover:bg-white/10' : 'border-black text-black hover:bg-black/5'}`} onClick={() => setState(prev => ({ ...prev, current: h }))}>
+                  <span className={isDarkMode ? 'text-[#FF4D00]' : 'text-gray-500'}>[ID_{h.id.slice(0,4)}]</span> {h.text.substring(0, 45)}...
                 </div>
               ))}
             </div>
           </div>
 
           <div>
-            <div className={`flex justify-between items-center mb-6 border-b pb-2 ${isDarkMode ? 'border-gray-800' : 'border-gray-100'}`}>
-              <h3 className={`font-mono text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Favorites_Database</h3>
+            <div className={`flex justify-between items-center mb-6 border-b pb-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h3 className={`font-mono text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Favorites_Database</h3>
               {favorites.length > 0 && (
-                <button 
-                  onClick={handlePurgeClick}
-                  className={`
-                    font-mono text-[9px] font-bold border px-2 py-0.5 transition-all duration-200
-                    ${purgeArmed 
-                      ? 'bg-red-600 text-white border-red-800 animate-pulse scale-110' 
-                      : 'border-red-500 text-red-500 hover:bg-red-500 hover:text-white'
-                    }
-                  `}
-                >
-                  {purgeArmed ? 'SURE? [CLICK_AGAIN]' : 'PURGE_DATABASE'}
+                <button onClick={handlePurgeClick} className={`font-mono text-[9px] font-bold border px-2 py-0.5 transition-all duration-200 ${purgeArmed ? 'bg-red-600 text-white border-red-800' : 'border-red-500 text-red-500 hover:bg-red-500 hover:text-white'}`}>
+                  {purgeArmed ? 'SURE? CLICK AGAIN' : 'PURGE'}
                 </button>
               )}
             </div>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {favorites.length === 0 && <span className="font-mono text-[10px] text-gray-400 italic opacity-50">NO_DATA_PERSISTED</span>}
               {favorites.map((f, i) => (
-                <div 
-                  key={f.id || i} 
-                  className={`font-mono text-[10px] border-l-2 pl-4 py-1 transition-colors group flex justify-between items-center cursor-pointer ${isDarkMode ? 'border-[#FF4D00] text-white hover:bg-orange-950/20' : 'border-[#FF4D00] text-black hover:bg-orange-50'}`} 
-                  onClick={() => setState(prev => ({ ...prev, current: f }))}
-                >
+                <div key={f.id || i} className={`font-mono text-[10px] border-l-2 pl-4 py-2 transition-all group flex justify-between items-center cursor-pointer ${isDarkMode ? 'border-[#FF4D00] text-white hover:bg-[#FF4D00]/10' : 'border-[#FF4D00] text-black hover:bg-orange-50'}`} onClick={() => setState(prev => ({ ...prev, current: f }))}>
                   <span className="truncate pr-2"><span className="text-[#FF4D00]">[SAVED]</span> {f.text}</span>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); toggleFavorite(f); }}
-                    className="opacity-0 group-hover:opacity-100 text-red-500 hover:scale-125 transition-all px-2 font-bold"
-                  >
-                    ×
-                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); toggleFavorite(f); }} className="opacity-0 group-hover:opacity-100 text-red-500 hover:scale-125 transition-all px-2 font-bold">×</button>
                 </div>
               ))}
             </div>
-          </div>
-
-          <div className={`mt-auto pt-10 border-t ${isDarkMode ? 'border-white' : 'border-black'}`}>
-             <div className="flex flex-col gap-2">
-                <span className="font-mono text-[10px] uppercase font-bold">Network Architecture</span>
-                <p className={`text-xs leading-relaxed transition-colors ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                  Distributed neural architecture processing high-entropy humor and low-latency philosophy. 
-                  Always wear sunscreen.
-                </p>
-             </div>
           </div>
         </aside>
       </main>
@@ -269,13 +229,6 @@ const App: React.FC = () => {
           <span>ENCRYPTION: {isDarkMode ? 'QUANTUM' : 'ACTIVE'}</span>
         </div>
       </footer>
-
-      <style>{`
-        .shadow-white-slab { box-shadow: 8px 8px 0px 0px #fff; }
-        .shadow-white-slab:active { box-shadow: 0px 0px 0px 0px #fff; transform: translate(8px, 8px); }
-        @keyframes slide-in-bottom { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .animate-in { animation: slide-in-bottom 0.2s ease-out; }
-      `}</style>
     </div>
   );
 };
