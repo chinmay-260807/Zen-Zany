@@ -5,11 +5,18 @@ import { generateAdvice } from './services/geminiService';
 import AdviceCard from './components/AdviceCard';
 
 const App: React.FC = () => {
+  // Use a lazy initializer for state to handle persistence and initial random selection in one go
   const [state, setState] = useState<AdviceState>(() => {
     const initial = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
+    let storedHistory: Advice[] = [];
+    try {
+      const saved = localStorage.getItem('zen_zany_history');
+      if (saved) storedHistory = JSON.parse(saved);
+    } catch (e) { console.error("History parse failed", e); }
+
     return {
       current: initial,
-      history: [],
+      history: storedHistory,
       loading: false,
       error: null,
     };
@@ -24,29 +31,17 @@ const App: React.FC = () => {
   const purgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Load persisted data
+    // Load persisted favorites and theme
     const storedFavs = localStorage.getItem('zen_zany_favorites');
     if (storedFavs) {
-      try {
-        setFavorites(JSON.parse(storedFavs));
-      } catch (e) { console.error("Failed to parse favorites", e); }
-    }
-
-    const storedHistory = localStorage.getItem('zen_zany_history');
-    if (storedHistory) {
-      try {
-        const history = JSON.parse(storedHistory);
-        setState(prev => ({ ...prev, history }));
-      } catch (e) { console.error("Failed to parse history", e); }
+      try { setFavorites(JSON.parse(storedFavs)); } catch (e) { console.error("Favorites parse failed", e); }
     }
 
     const storedTheme = localStorage.getItem('zen_zany_theme');
-    if (storedTheme === 'dark') {
-      setIsDarkMode(true);
-    }
+    if (storedTheme === 'dark') setIsDarkMode(true);
   }, []);
 
-  // Sync state to local storage
+  // Persistent storage sync
   useEffect(() => {
     localStorage.setItem('zen_zany_favorites', JSON.stringify(favorites));
   }, [favorites]);
@@ -57,7 +52,6 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('zen_zany_theme', isDarkMode ? 'dark' : 'light');
-    // Direct DOM manipulation to sync body color perfectly
     document.body.style.backgroundColor = isDarkMode ? '#121212' : '#f0f0f0';
     document.body.style.color = isDarkMode ? '#ffffff' : '#000000';
   }, [isDarkMode]);
@@ -65,9 +59,7 @@ const App: React.FC = () => {
   const toggleFavorite = useCallback((advice: Advice) => {
     setFavorites(prev => {
       const exists = prev.find(f => f.id === advice.id);
-      if (exists) {
-        return prev.filter(f => f.id !== advice.id);
-      }
+      if (exists) return prev.filter(f => f.id !== advice.id);
       return [advice, ...prev];
     });
   }, []);
@@ -81,9 +73,7 @@ const App: React.FC = () => {
     if (!purgeArmed) {
       setPurgeArmed(true);
       if (purgeTimerRef.current) clearTimeout(purgeTimerRef.current);
-      purgeTimerRef.current = setTimeout(() => {
-        setPurgeArmed(false);
-      }, 3000);
+      purgeTimerRef.current = setTimeout(() => setPurgeArmed(false), 3000);
     } else {
       setFavorites([]);
       setPurgeArmed(false);
@@ -104,39 +94,36 @@ const App: React.FC = () => {
 
     try {
       const newAdvice = await generateAdvice();
-      setState(prev => {
-        // Only add to history if it's not already the current one
-        const newHistory = [newAdvice, ...prev.history].slice(0, 10);
-        return {
-          ...prev,
-          current: newAdvice,
-          history: newHistory,
-          loading: false,
-        };
-      });
+      setState(prev => ({
+        ...prev,
+        current: newAdvice,
+        history: [newAdvice, ...prev.history].slice(0, 15),
+        loading: false,
+      }));
     } catch (err) {
-      const fallback = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
+      console.error("API failed, falling back to static cache.", err);
+      // Select a random fallback that isn't the current one if possible
+      const filteredFallbacks = FALLBACK_ADVICE.filter(f => f.id !== state.current?.id);
+      const fallback = filteredFallbacks.length > 0 
+        ? filteredFallbacks[Math.floor(Math.random() * filteredFallbacks.length)]
+        : FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
+      
       setState(prev => ({
         ...prev,
         current: fallback,
+        history: [fallback, ...prev.history].slice(0, 15),
         loading: false,
-        error: "COMM_ERROR // DATA_RECOVERY_ENGAGED"
+        error: "NETWORK_ERROR // OFFLINE_BUFFER_ENGAGED"
       }));
     }
-  }, []);
+  }, [state.current]);
 
   const isCurrentFavorite = state.current ? favorites.some(f => f.id === state.current?.id) : false;
 
-  const themeClasses = isDarkMode 
-    ? 'bg-[#121212] text-white border-white' 
-    : 'bg-[#f0f0f0] text-black border-black';
-
-  const subThemeClasses = isDarkMode
-    ? 'bg-[#1a1a1a] border-white'
-    : 'bg-white border-black';
+  const subThemeClasses = isDarkMode ? 'bg-[#1a1a1a] border-white' : 'bg-white border-black';
 
   return (
-    <div className={`min-h-screen flex flex-col transition-all duration-500 ease-in-out ${themeClasses} ${isFlashing ? 'glitch-flash' : ''}`}>
+    <div className={`min-h-screen flex flex-col transition-all duration-500 ease-in-out ${isDarkMode ? 'bg-[#121212] text-white border-white' : 'bg-[#f0f0f0] text-black border-black'} ${isFlashing ? 'glitch-flash' : ''}`}>
       <nav className={`w-full border-b-[4px] p-4 md:p-6 flex justify-between items-center sticky top-0 z-50 transition-colors duration-500 ${subThemeClasses}`}>
         <div className="flex items-center gap-4">
           <div className={`w-8 h-8 flex items-center justify-center font-mono font-bold transition-colors duration-500 ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>Z</div>
@@ -198,8 +185,8 @@ const App: React.FC = () => {
             <div className="flex flex-col gap-3">
               {state.history.length === 0 && <span className="font-mono text-[10px] text-gray-500 italic">LOGS_WIPED_CLEAN</span>}
               {state.history.map((h, i) => (
-                <div key={h.id || i} className={`font-mono text-[10px] border-l-2 pl-4 py-2 transition-all cursor-pointer ${isDarkMode ? 'border-white text-gray-300 hover:bg-white/10' : 'border-black text-black hover:bg-black/5'}`} onClick={() => setState(prev => ({ ...prev, current: h }))}>
-                  <span className={isDarkMode ? 'text-[#FF4D00]' : 'text-[#FF4D00]'}>[ID_{h.id ? h.id.slice(0,4) : 'FB'}]</span> {h.text.substring(0, 45)}...
+                <div key={`${h.id}-${i}`} className={`font-mono text-[10px] border-l-2 pl-4 py-2 transition-all cursor-pointer ${isDarkMode ? 'border-[#FF4D00] text-gray-300 hover:bg-white/5' : 'border-[#FF4D00] text-black hover:bg-black/5'}`} onClick={() => setState(prev => ({ ...prev, current: h }))}>
+                  <span className="text-[#FF4D00]">[ID_{h.id ? h.id.substring(0,4) : 'FB'}]</span> {h.text.substring(0, 45)}...
                 </div>
               ))}
             </div>
@@ -217,7 +204,7 @@ const App: React.FC = () => {
             <div className="flex flex-col gap-3">
               {favorites.length === 0 && <span className="font-mono text-[10px] text-gray-500 italic">NO_DATA_PERSISTED</span>}
               {favorites.map((f, i) => (
-                <div key={f.id || i} className={`font-mono text-[10px] border-l-2 pl-4 py-2 transition-all group flex justify-between items-center cursor-pointer ${isDarkMode ? 'border-[#FF4D00] text-gray-300 hover:bg-[#FF4D00]/10' : 'border-[#FF4D00] text-black hover:bg-orange-50'}`} onClick={() => setState(prev => ({ ...prev, current: f }))}>
+                <div key={`fav-${f.id}-${i}`} className={`font-mono text-[10px] border-l-2 pl-4 py-2 transition-all group flex justify-between items-center cursor-pointer ${isDarkMode ? 'border-[#FF4D00] text-gray-300 hover:bg-[#FF4D00]/10' : 'border-[#FF4D00] text-black hover:bg-orange-50'}`} onClick={() => setState(prev => ({ ...prev, current: f }))}>
                   <span className="truncate pr-2"><span className="text-[#FF4D00]">[SAVED]</span> {f.text}</span>
                   <button onClick={(e) => { e.stopPropagation(); toggleFavorite(f); }} className="opacity-0 group-hover:opacity-100 text-red-500 hover:scale-125 transition-all px-2 font-bold">×</button>
                 </div>

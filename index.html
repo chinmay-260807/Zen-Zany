@@ -22,7 +22,7 @@
           linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
           linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
         background-size: 40px 40px;
-        transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
+        transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out;
       }
       .font-mono {
         font-family: 'Space Mono', monospace;
@@ -43,15 +43,13 @@
         100% { filter: invert(0); }
       }
       .glitch-flash {
-        animation: flash 0.2s ease-in-out;
+        animation: flash 0.15s ease-in-out;
       }
-      /* Ensure scrollbar looks brutalist */
       ::-webkit-scrollbar {
-        width: 12px;
+        width: 10px;
       }
       ::-webkit-scrollbar-track {
         background: transparent;
-        border-left: 2px solid currentColor;
       }
       ::-webkit-scrollbar-thumb {
         background: currentColor;
@@ -67,9 +65,9 @@
     "react-dom/client": "https://esm.sh/react-dom@^19.2.3/client",
     "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
     "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>

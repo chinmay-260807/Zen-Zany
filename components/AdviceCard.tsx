@@ -83,10 +83,14 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
     setBackstoryError(false);
     try {
       const explanation = await getAdviceBackstory(advice.text, advice.mood);
-      setBackstory(explanation);
-      setShowBackstory(true);
+      if (explanation) {
+        setBackstory(explanation);
+        setShowBackstory(true);
+      } else {
+        throw new Error("Empty backstory");
+      }
     } catch (err) {
-      setBackstory("UNABLE_TO_RETRIEVE_CONTEXT // ENGINE_ERROR");
+      setBackstory("COMM_FAILURE // UNABLE_TO_RETRIEVE_CONTEXT");
       setBackstoryError(true);
       setShowBackstory(true);
     } finally { setIsExplaining(false); }
@@ -95,7 +99,7 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
   const cardBg = isDarkMode ? 'bg-[#1a1a1a]' : 'bg-white';
   const cardBorder = isDarkMode ? 'border-white' : 'border-black';
   const cardText = isDarkMode ? 'text-white' : 'text-black';
-  const backstoryBg = isDarkMode ? 'bg-zinc-800' : 'bg-white';
+  const backstoryBg = isDarkMode ? 'bg-zinc-900' : 'bg-white';
   const shadowClass = isDarkMode ? 'slab-shadow-white' : 'slab-shadow';
 
   return (
@@ -108,11 +112,11 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
              Insight_Payload
           </div>
           <div className="relative">
-            <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tighter uppercase transition-all duration-700 ${showBackstory ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100'} ${cardText}`}>
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-[1.1] tracking-tighter uppercase transition-all duration-500 ${showBackstory ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100'} ${cardText}`}>
               {advice?.text}
             </h2>
             <div className={`absolute inset-0 flex flex-col justify-center transition-all duration-700 ${showBackstory ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95 pointer-events-none'}`}>
-              <div className={`relative ${backstoryBg} border-[3px] md:border-[4px] ${cardBorder} p-5 sm:p-10 ${isDarkMode ? 'shadow-[4px_4px_0px_0px_#fff]' : 'shadow-[4px_4px_0px_0px_#000]'}`}>
+              <div className={`relative ${backstoryBg} border-[3px] md:border-[4px] ${cardBorder} p-5 sm:p-10 ${isDarkMode ? 'shadow-[4px_4px_0px_0px_#ffffff]' : 'shadow-[4px_4px_0px_0px_#000000]'}`}>
                 <div className={`absolute -bottom-4 left-12 w-6 h-6 ${backstoryBg} border-r-[3px] border-b-[3px] ${cardBorder} transform rotate-45 -z-10`} />
                 <span className="font-mono text-[10px] font-bold uppercase mb-4 text-[#FF4D00] block tracking-widest">Contextual_Analysis</span>
                 <p className={`text-lg md:text-2xl font-bold font-mono lowercase ${backstoryError ? 'text-red-500' : cardText}`}>{backstory}</p>
@@ -136,7 +140,7 @@ const AdviceCard: React.FC<AdviceCardProps> = ({ advice, loading, onClick, isFav
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3 mt-8">
-             <button onClick={handleExplain} className={`group p-3 md:p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-between transition-colors ${isDarkMode ? 'bg-white text-black hover:bg-[#FF4D00] hover:text-white' : 'bg-black text-white hover:bg-[#FF4D00]'}`}>
+             <button onClick={handleExplain} disabled={loading} className={`group p-3 md:p-4 font-mono text-[10px] font-bold uppercase flex items-center justify-between transition-colors ${isDarkMode ? 'bg-white text-black hover:bg-[#FF4D00] hover:text-white' : 'bg-black text-white hover:bg-[#FF4D00] disabled:opacity-50'}`}>
                <span>{isExplaining ? 'ANALYZING...' : showBackstory ? 'CLOSE' : 'EXPLAIN'}</span>
                <IconWrapper><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg></IconWrapper>
              </button>
