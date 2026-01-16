@@ -2,9 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Advice, AdviceMood } from "../types";
 
-const generateId = () => Math.random().toString(16).slice(2, 8).toUpperCase();
-
 export const generateAdvice = async (): Promise<Advice> => {
+  const generateId = () => Math.random().toString(16).slice(2, 8).toUpperCase();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const moods = Object.values(AdviceMood);
   const randomMood = moods[Math.floor(Math.random() * moods.length)];

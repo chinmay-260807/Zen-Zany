@@ -1,17 +1,22 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Advice, AdviceState } from './types';
+import { Advice, AdviceMood, AdviceState } from './types';
 import { FALLBACK_ADVICE } from './constants';
 import { generateAdvice } from './services/geminiService';
 import AdviceCard from './components/AdviceCard';
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AdviceState>({
-    current: null,
-    history: [],
-    loading: false,
-    error: null,
+  // Use state initializer function to avoid null initial render and module-level random logic
+  const [state, setState] = useState<AdviceState>(() => {
+    const initial = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
+    return {
+      current: initial,
+      history: [],
+      loading: false,
+      error: null,
+    };
   });
+  
   const [favorites, setFavorites] = useState<Advice[]>([]);
   const [isFlashing, setIsFlashing] = useState(false);
   const [purgeArmed, setPurgeArmed] = useState(false);
@@ -34,10 +39,6 @@ const App: React.FC = () => {
     if (storedTheme === 'dark') {
       setIsDarkMode(true);
     }
-
-    // Pick random initial advice at runtime
-    const initial = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
-    setState(prev => ({ ...prev, current: initial }));
   }, []);
 
   useEffect(() => {
