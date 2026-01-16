@@ -22,7 +22,7 @@
           linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
           linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
         background-size: 40px 40px;
-        transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out;
+        transition: background-color 0.3s ease-in-out;
       }
       .font-mono {
         font-family: 'Space Mono', monospace;
@@ -35,7 +35,7 @@
       }
       .active-press:active {
         box-shadow: 0px 0px 0px 0px currentColor;
-        transform: translate(8px, 8px);
+        transform: translate(4px, 4px);
       }
       @keyframes flash {
         0% { filter: invert(0); }
@@ -52,9 +52,12 @@
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: currentColor;
+        background: #000;
         border: 2px solid transparent;
         background-clip: content-box;
+      }
+      body.dark ::-webkit-scrollbar-thumb {
+        background: #fff;
       }
     </style>
     <script type="importmap">
@@ -72,7 +75,7 @@
 }
 </script>
   </head>
-  <body>
+  <body class="light">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
   </body>
