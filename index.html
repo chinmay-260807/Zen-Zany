@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADVICE_v3 // BRUTALIST_ARCHIVE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #f0f0f0;
+        --accent: #000000;
+        --safety-orange: #FF4D00;
+      }
+      body {
+        font-family: 'Space Grotesk', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg);
+        color: var(--accent);
+        background-image: 
+          linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+      .font-mono {
+        font-family: 'Space Mono', monospace;
+      }
+      .slab-shadow {
+        box-shadow: 8px 8px 0px 0px #000;
+      }
+      .slab-shadow-hover:hover {
+        box-shadow: 12px 12px 0px 0px var(--safety-orange);
+        transform: translate(-4px, -4px);
+      }
+      .active-press:active {
+        box-shadow: 0px 0px 0px 0px #000;
+        transform: translate(8px, 8px);
+      }
+
+      /* Custom Invert Flash Animation */
+      @keyframes flash {
+        0% { filter: invert(0); }
+        50% { filter: invert(1); }
+        100% { filter: invert(0); }
+      }
+      .glitch-flash {
+        animation: flash 0.2s ease-in-out;
+      }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.35.0"
+      }
+    }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

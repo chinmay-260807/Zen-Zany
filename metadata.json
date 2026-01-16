@@ -1,0 +1,5 @@
+{
+  "name": "Zen & Zany: The Advice Engine",
+  "description": "A minimalist, cheerful random advice generator that serves a mix of profound wisdom and absurd nonsense using Gemini AI.",
+  "requestFramePermissions": []
+}
