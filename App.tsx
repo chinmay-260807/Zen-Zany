@@ -53,7 +53,7 @@ const App: React.FC = () => {
 
   const toggleFavorite = useCallback((advice: Advice) => {
     setFavorites(prev => {
-      const exists = prev.find(f => f.text === advice.text);
+      const exists = prev.find(f => f.text.trim().toLowerCase() === advice.text.trim().toLowerCase());
       if (exists) return prev.filter(f => f.text !== advice.text);
       return [advice, ...prev];
     });
@@ -65,14 +65,26 @@ const App: React.FC = () => {
     setIsFlashing(true);
     setTimeout(() => setIsFlashing(false), 150);
 
+    const historyTexts = state.history.map(h => h.text);
+
     try {
-      const newAdvice = await generateAdvice();
+      let newAdvice = await generateAdvice(historyTexts);
+      
+      // Simple client-side check to prevent immediate re-generation of the exact same advice
+      // if the AI somehow ignores the instructions.
+      let attempts = 0;
+      while (historyTexts.includes(newAdvice.text) && attempts < 2) {
+        newAdvice = await generateAdvice(historyTexts);
+        attempts++;
+      }
+
       setState(prev => {
-        // Strict deduplication by text content
-        const combined = [newAdvice, ...prev.history];
-        const uniqueHistory = combined.filter((v, i, a) => 
-          a.findIndex(t => t.text === v.text) === i
-        ).slice(0, 15);
+        // Double check for uniqueness before adding to history
+        if (prev.history.some(h => h.text === newAdvice.text)) {
+           return { ...prev, current: newAdvice, loading: false };
+        }
+
+        const uniqueHistory = [newAdvice, ...prev.history].slice(0, 20);
         
         return {
           ...prev,
@@ -83,14 +95,16 @@ const App: React.FC = () => {
       });
     } catch (err) {
       console.error("API Error, using fallback:", err);
-      const randomFallback = FALLBACK_ADVICE[Math.floor(Math.random() * FALLBACK_ADVICE.length)];
+      // Select a random fallback that isn't the current one
+      const others = FALLBACK_ADVICE.filter(f => f.text !== state.current?.text);
+      const randomFallback = others[Math.floor(Math.random() * others.length)] || FALLBACK_ADVICE[0];
       const fallbackWithId = { ...randomFallback, id: 'FB-' + Date.now().toString(16).substring(8) };
       
       setState(prev => {
         const combined = [fallbackWithId, ...prev.history];
         const uniqueHistory = combined.filter((v, i, a) => 
           a.findIndex(t => t.text === v.text) === i
-        ).slice(0, 15);
+        ).slice(0, 20);
 
         return {
           ...prev,
@@ -101,7 +115,7 @@ const App: React.FC = () => {
         };
       });
     }
-  }, [state.loading, state.history]);
+  }, [state.loading, state.history, state.current]);
 
   const handleThemeToggle = useCallback(() => {
     setIsDarkMode(prev => !prev);
@@ -119,14 +133,14 @@ const App: React.FC = () => {
     }
   }, [purgeArmed]);
 
-  const isCurrentFavorite = state.current ? favorites.some(f => f.text === state.current?.text) : false;
+  const isCurrentFavorite = state.current ? favorites.some(f => f.text.trim().toLowerCase() === state.current?.text.trim().toLowerCase()) : false;
 
   return (
     <div className={`min-h-screen flex flex-col transition-all duration-300 ${isDarkMode ? 'bg-[#121212] text-white border-white' : 'bg-[#f0f0f0] text-black border-black'} ${isFlashing ? 'glitch-flash' : ''}`}>
       <nav className={`w-full border-b-[4px] p-4 md:p-6 flex justify-between items-center sticky top-0 z-50 transition-colors ${isDarkMode ? 'bg-[#1a1a1a] border-white' : 'bg-white border-black'}`}>
         <div className="flex items-center gap-4">
           <div className={`w-8 h-8 flex items-center justify-center font-mono font-bold ${isDarkMode ? 'bg-white text-black' : 'bg-black text-white'}`}>Z</div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tighter uppercase">Zen_X_Zany // v3.03</h1>
+          <h1 className="text-xl md:text-2xl font-bold tracking-tighter uppercase">Zen_X_Zany // v3.04</h1>
         </div>
         <button onClick={handleThemeToggle} className={`flex items-center gap-2 px-3 py-1 border-[2px] font-mono text-[10px] font-bold uppercase transition-all ${isDarkMode ? 'border-white text-white hover:bg-white hover:text-black' : 'border-black text-black hover:bg-black hover:text-white'}`}>
           <span className={`w-2 h-2 rounded-full ${isDarkMode ? 'bg-yellow-400' : 'bg-indigo-600'}`} />
@@ -190,7 +204,7 @@ const App: React.FC = () => {
         <span>© VOID_AESTHETICS // ARCHIVE_2025</span>
         <div className="flex gap-4">
           {state.error && <span className="animate-pulse text-red-500">ERR: {state.error}</span>}
-          <span>ENCRYPT: {isDarkMode ? 'QUANTUM' : 'ACTIVE'}</span>
+          <span>SECURE: {isDarkMode ? 'QUANTUM' : 'ACTIVE'}</span>
         </div>
       </footer>
     </div>
